@@ -1,0 +1,1109 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitectura de Tablaroca 3D - Suite Elegante con Plano 30 (2m x 2m)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for full 360 navigation -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Glassmorphism panel styling */
+        .glass-panel {
+            background: rgba(18, 18, 22, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        .btn-glass:active {
+            transform: translateY(1px);
+        }
+        .btn-glass.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-black text-white antialiased">
+
+    <!-- Canvas for 3D Scene -->
+    <div id="canvas-container"></div>
+
+    <!-- Header Overlay HUD -->
+    <div class="fixed top-4 left-4 z-10 pointer-events-none">
+        <div class="glass-panel rounded-2xl p-4 shadow-2xl max-w-sm pointer-events-auto transition-all">
+            <div class="flex items-center gap-2.5 mb-1">
+                <span class="p-2 rounded-lg bg-amber-500/20 text-amber-300">
+                    <i class="fa-solid fa-ruler-combined text-lg"></i>
+                </span>
+                <div>
+                    <h1 class="text-base font-bold tracking-wide text-white">Arquitectura Tablaroca</h1>
+                    <p class="text-[11px] text-amber-200/80 font-medium uppercase tracking-wider">Suite 3D & Plano '30' (2.00m x 2.00m)</p>
+                    <p class="text-[10px] text-amber-400 font-semibold mt-0.5"><i class="fa-solid fa-pen-nib mr-1"></i>Creado por: Julio Cesar</p>
+                </div>
+            </div>
+            <p class="text-xs text-gray-300 mt-2 leading-relaxed">
+                Diseño residencial con techo suspendido de tablaroca, iluminación LED e integración de plano arquitectónico escala 2x2m con cota profesional del número "30".
+            </p>
+            <div class="mt-3 pt-3 border-t border-white/10 space-y-1 text-xs text-gray-300">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-spin text-amber-400/80 w-4"></i>
+                    <span><strong>Rotar:</strong> Clic izquierdo / 1 dedo</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass text-amber-400/80 w-4"></i>
+                    <span><strong>Zoom:</strong> Rueda ratón / Pinchar</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-up-down-left-right text-amber-400/80 w-4"></i>
+                    <span><strong>Desplazar:</strong> Clic derecho / 2 dedos</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Menu at Bottom -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 max-w-[95vw]">
+        <div class="glass-panel rounded-2xl p-2.5 shadow-2xl flex flex-wrap items-center justify-center gap-2">
+            <!-- Camera Presets -->
+            <div class="flex items-center gap-1.5 px-2 py-1 bg-black/30 rounded-xl">
+                <span class="text-[10px] uppercase font-bold text-gray-400 px-1 hidden sm:inline"><i class="fa-solid fa-video text-gray-400 mr-1"></i>Vistas:</span>
+                <button id="cam-general" class="btn-glass px-3 py-1.5 rounded-lg text-xs font-medium active">
+                    <i class="fa-solid fa-house text-amber-400"></i> <span class="hidden md:inline">General</span>
+                </button>
+                <button id="cam-number" class="btn-glass px-3 py-1.5 rounded-lg text-xs font-medium">
+                    <i class="fa-solid fa-hashtag text-amber-400"></i> <span class="hidden md:inline">Plano "30" (2x2m)</span>
+                </button>
+                <button id="cam-bed" class="btn-glass px-3 py-1.5 rounded-lg text-xs font-medium">
+                    <i class="fa-solid fa-bed text-amber-400"></i> <span class="hidden md:inline">Cama</span>
+                </button>
+                <button id="cam-ceiling" class="btn-glass px-3 py-1.5 rounded-lg text-xs font-medium">
+                    <i class="fa-solid fa-chevron-up text-amber-400"></i> <span class="hidden md:inline">Techo Tablaroca</span>
+                </button>
+                <button id="cam-mirror" class="btn-glass px-3 py-1.5 rounded-lg text-xs font-medium">
+                    <i class="fa-solid fa-square text-amber-400"></i> <span class="hidden md:inline">Espejo</span>
+                </button>
+                <button id="cam-door" class="btn-glass px-3 py-1.5 rounded-lg text-xs font-medium">
+                    <i class="fa-solid fa-door-closed text-amber-400"></i> <span class="hidden md:inline">Puerta</span>
+                </button>
+            </div>
+
+            <div class="h-6 w-[1px] bg-white/20 hidden sm:block"></div>
+
+            <!-- Light Mode Toggle -->
+            <button id="btn-lights" class="btn-glass px-3.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-lightbulb text-amber-300"></i>
+                <span id="light-mode-text">Luz Warm LED</span>
+            </button>
+
+            <!-- Auto Rotate Toggle -->
+            <button id="btn-rotate" class="btn-glass px-3.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-spin text-sky-400"></i>
+                <span id="rotate-status">Giro: OFF</span>
+            </button>
+
+            <!-- Grid Guide Toggle -->
+            <button id="btn-grid" class="btn-glass px-3.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-border-all text-emerald-400"></i>
+                <span>Guía</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main 3D JavaScript -->
+    <script>
+        let scene, camera, renderer, controls;
+        let roomGroup;
+        let warmLightsGroup, coolLightsGroup;
+        let isAutoRotating = false;
+        let currentLightMode = 'warm'; // 'warm' or 'bright'
+
+        // Color Palette for Drywall / Tablaroca Interior
+        const COLORS = {
+            drywallWhite: 0xf5f5f2,
+            drywallOffWhite: 0xeae8e1,
+            wallAccent: 0xdcd8cf,
+            woodAccent: 0x3d2b1f,
+            woodDoor: 0x382317,
+            woodDoorFrame: 0x24160e,
+            doorMetal: 0xd8d8d8,
+            bedFrame: 0x1e1e24,
+            sheets: 0xffffff,
+            blanket: 0x5a636a,
+            pillowWhite: 0xfafafa,
+            pillowAccent: 0xd2a87a,
+            ledWarm: 0xffaa44,
+            ledCool: 0xe0f0ff,
+            floorTile: 0xf8f8f6
+        };
+
+        function initScene() {
+            const container = document.getElementById('canvas-container');
+
+            // 1. Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020203);
+            scene.fog = new THREE.FogExp2(0x020203, 0.025);
+
+            // 2. Camera setup
+            camera = new THREE.PerspectiveCamera(
+                45, 
+                window.innerWidth / window.innerHeight, 
+                0.1, 
+                100
+            );
+            camera.position.set(11, 7.5, 11);
+
+            // 3. Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+            container.appendChild(renderer.domElement);
+
+            // 4. Group for the whole room structure
+            roomGroup = new THREE.Group();
+            scene.add(roomGroup);
+
+            setupLighting();
+
+            buildFloorAndBase();
+
+            buildDrywallWalls();
+
+            buildPlanNumber30(); // Adds 2m x 2m architectural '30' blueprint panel
+
+            buildBed();
+
+            buildDrywallCeiling();
+
+            buildDecorAndFurniture();
+
+            // 5. Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true;
+            controls.minDistance = 3;
+            controls.maxDistance = 25;
+            controls.maxPolarAngle = Math.PI / 2 + 0.05; // Slightly allow eye-level perspective
+            controls.target.set(0, 2.2, 0);
+            controls.update();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize, false);
+            setupUIControls();
+        }
+
+        function setupLighting() {
+            warmLightsGroup = new THREE.Group();
+            coolLightsGroup = new THREE.Group();
+            scene.add(warmLightsGroup);
+            scene.add(coolLightsGroup);
+
+            // Ambient Light (Soft base)
+            const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+            scene.add(ambient);
+
+            // Main Sun/Window Directional Light with Shadows
+            const mainLight = new THREE.DirectionalLight(0xfff5ea, 1.2);
+            mainLight.position.set(8, 14, 8);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 30;
+            const d = 8;
+            mainLight.shadow.camera.left = -d;
+            mainLight.shadow.camera.right = d;
+            mainLight.shadow.camera.top = d;
+            mainLight.shadow.camera.bottom = -d;
+            mainLight.shadow.bias = -0.0005;
+            scene.add(mainLight);
+
+            // Soft Fill Light from lower front
+            const fillLight = new THREE.DirectionalLight(0xddeeff, 0.3);
+            fillLight.position.set(-6, 4, -6);
+            scene.add(fillLight);
+
+            // Ceiling Cove LED Point Lights (Warm Mode)
+            const ceilingWarmLED1 = new THREE.PointLight(COLORS.ledWarm, 1.8, 12);
+            ceilingWarmLED1.position.set(0, 4.4, 0);
+            warmLightsGroup.add(ceilingWarmLED1);
+
+            const coveWarm1 = new THREE.PointLight(COLORS.ledWarm, 1.2, 8);
+            coveWarm1.position.set(0, 4.3, -3.2);
+            warmLightsGroup.add(coveWarm1);
+
+            const coveWarm2 = new THREE.PointLight(COLORS.ledWarm, 1.2, 8);
+            coveWarm2.position.set(0, 4.3, 3.2);
+            warmLightsGroup.add(coveWarm2);
+
+            // Headboard Niche Warm LED
+            const nicheWarmLED = new THREE.PointLight(0xff8833, 1.5, 6);
+            nicheWarmLED.position.set(0, 2.8, -3.6);
+            warmLightsGroup.add(nicheWarmLED);
+
+            // Cool/Bright Mode Lights
+            const ceilingCoolLED = new THREE.PointLight(COLORS.ledCool, 2.0, 14);
+            ceilingCoolLED.position.set(0, 4.4, 0);
+            coolLightsGroup.add(ceilingCoolLED);
+
+            coolLightsGroup.visible = false; // Warm mode active by default
+        }
+
+        function buildFloorAndBase() {
+            // Main Floor Platform
+            const floorGeo = new THREE.BoxGeometry(8, 0.4, 8);
+            const floorMat = new THREE.MeshStandardMaterial({
+                color: COLORS.floorTile,
+                roughness: 0.15,
+                metalness: 0.05
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.set(0, 0, 0);
+            floor.receiveShadow = true;
+            roomGroup.add(floor);
+
+            // Floor Edge Inset LED Stripe Glow Effect
+            const baseGlowGeo = new THREE.BoxGeometry(8.1, 0.05, 8.1);
+            const baseGlowMat = new THREE.MeshBasicMaterial({ color: 0xffaa44, transparent: true, opacity: 0.3 });
+            const baseGlow = new THREE.Mesh(baseGlowGeo, baseGlowMat);
+            baseGlow.position.set(0, -0.15, 0);
+            roomGroup.add(baseGlow);
+
+            // Subtle floor grid tiles lines
+            const grid = new THREE.GridHelper(8, 16, 0xcccccc, 0xe5e5e0);
+            grid.position.y = 0.201;
+            grid.material.opacity = 0.25;
+            grid.material.transparent = true;
+            roomGroup.add(grid);
+        }
+
+        function buildDrywallWalls() {
+            // Drywall Smooth Surface Material
+            const drywallMat = new THREE.MeshStandardMaterial({
+                color: COLORS.drywallWhite,
+                roughness: 0.45,
+                metalness: 0.02
+            });
+
+            const drywallAccentMat = new THREE.MeshStandardMaterial({
+                color: COLORS.drywallOffWhite,
+                roughness: 0.5,
+                metalness: 0.01
+            });
+
+            // Back Wall (Main Tablaroca Headboard Wall)
+            const backWallGeo = new THREE.BoxGeometry(8, 4.6, 0.3);
+            const backWall = new THREE.Mesh(backWallGeo, drywallMat);
+            backWall.position.set(0, 2.5, -3.85);
+            backWall.receiveShadow = true;
+            backWall.castShadow = true;
+            roomGroup.add(backWall);
+
+            // Right Wall in Drywall
+            const rightWallGeo = new THREE.BoxGeometry(0.3, 4.6, 8);
+            const rightWall = new THREE.Mesh(rightWallGeo, drywallMat);
+            rightWall.position.set(3.85, 2.5, 0);
+            rightWall.receiveShadow = true;
+            rightWall.castShadow = true;
+            roomGroup.add(rightWall);
+
+            // Square Wooden Mirror Assembly (Espejo cuadrado elegante)
+            const mirrorGroup = new THREE.Group();
+
+            // Outer Wooden Frame
+            const frameSize = 2.2;
+            const frameDepth = 0.1;
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: COLORS.woodAccent,
+                roughness: 0.35,
+                metalness: 0.1
+            });
+
+            const frameGeo = new THREE.BoxGeometry(frameDepth, frameSize, frameSize);
+            const mirrorFrame = new THREE.Mesh(frameGeo, frameMat);
+            mirrorFrame.castShadow = true;
+            mirrorFrame.receiveShadow = true;
+            mirrorGroup.add(mirrorFrame);
+
+            // Inner Bevel Frame Accent
+            const innerFrameGeo = new THREE.BoxGeometry(frameDepth + 0.02, frameSize * 0.88, frameSize * 0.88);
+            const innerFrameMat = new THREE.MeshStandardMaterial({
+                color: 0x221811,
+                roughness: 0.25,
+                metalness: 0.2
+            });
+            const innerFrame = new THREE.Mesh(innerFrameGeo, innerFrameMat);
+            mirrorGroup.add(innerFrame);
+
+            // Reflective Mirror Glass Surface
+            const mirrorGlassGeo = new THREE.BoxGeometry(frameDepth + 0.03, frameSize * 0.82, frameSize * 0.82);
+            const mirrorGlassMat = new THREE.MeshStandardMaterial({
+                color: 0xf0f5ff,
+                roughness: 0.03,
+                metalness: 0.98,
+                envMapIntensity: 1.8
+            });
+            const mirrorGlass = new THREE.Mesh(mirrorGlassGeo, mirrorGlassMat);
+            mirrorGroup.add(mirrorGlass);
+
+            // Subtle Architectural LED Backlight behind Mirror Frame
+            const mirrorLedGeo = new THREE.BoxGeometry(0.04, frameSize + 0.1, frameSize + 0.1);
+            const mirrorLedMat = new THREE.MeshBasicMaterial({ color: 0xffaa44, transparent: true, opacity: 0.7 });
+            const mirrorLed = new THREE.Mesh(mirrorLedGeo, mirrorLedMat);
+            mirrorLed.position.x = -0.04;
+            mirrorGroup.add(mirrorLed);
+
+            // Position mirror on the right wall
+            mirrorGroup.position.set(3.68, 2.5, -1.8);
+            roomGroup.add(mirrorGroup);
+
+            // Floating Drywall Panel
+            const floatingPanelGeo = new THREE.BoxGeometry(5.2, 3.4, 0.25);
+            const floatingPanel = new THREE.Mesh(floatingPanelGeo, drywallAccentMat);
+            floatingPanel.position.set(0, 2.5, -3.65);
+            floatingPanel.receiveShadow = true;
+            floatingPanel.castShadow = true;
+            roomGroup.add(floatingPanel);
+
+            // Recessed Light Strip Behind Floating Panel
+            const stripGeo = new THREE.BoxGeometry(5.1, 3.3, 0.05);
+            const ledStripMat = new THREE.MeshBasicMaterial({ color: 0xffb855 });
+            const ledStrip = new THREE.Mesh(stripGeo, ledStripMat);
+            ledStrip.position.set(0, 2.5, -3.72);
+            roomGroup.add(ledStrip);
+
+            // Vertical Decorative Drywall Groove / Slats
+            for (let i = -2; i <= 2; i++) {
+                if (i === 0) continue;
+                const grooveGeo = new THREE.BoxGeometry(0.08, 3.2, 0.08);
+                const grooveMat = new THREE.MeshStandardMaterial({ color: 0x333338, roughness: 0.8 });
+                const groove = new THREE.Mesh(grooveGeo, grooveMat);
+                groove.position.set(i * 1.1, 2.5, -3.5);
+                roomGroup.add(groove);
+            }
+
+            // Left Wall in Drywall
+            const leftWallGeo = new THREE.BoxGeometry(0.3, 4.6, 8);
+            const leftWall = new THREE.Mesh(leftWallGeo, drywallMat);
+            leftWall.position.set(-3.85, 2.5, 0);
+            leftWall.receiveShadow = true;
+            leftWall.castShadow = true;
+            roomGroup.add(leftWall);
+
+            // Elegant Professional Wooden Door Assembly
+            const doorGroup = new THREE.Group();
+
+            const doorWidth = 1.6;
+            const doorHeight = 3.2;
+            const doorDepth = 0.12;
+
+            const frameOuterMat = new THREE.MeshStandardMaterial({
+                color: COLORS.woodDoorFrame,
+                roughness: 0.3,
+                metalness: 0.1
+            });
+            const frameOuterGeo = new THREE.BoxGeometry(0.2, doorHeight + 0.16, doorWidth + 0.2);
+            const frameOuter = new THREE.Mesh(frameOuterGeo, frameOuterMat);
+            frameOuter.castShadow = true;
+            frameOuter.receiveShadow = true;
+            doorGroup.add(frameOuter);
+
+            const doorMat = new THREE.MeshStandardMaterial({
+                color: COLORS.woodDoor,
+                roughness: 0.35,
+                metalness: 0.05
+            });
+            const doorPanelGeo = new THREE.BoxGeometry(doorDepth, doorHeight, doorWidth);
+            const doorPanel = new THREE.Mesh(doorPanelGeo, doorMat);
+            doorPanel.position.set(0.02, 0, 0);
+            doorPanel.castShadow = true;
+            doorPanel.receiveShadow = true;
+            doorGroup.add(doorPanel);
+
+            const grooveWoodMat = new THREE.MeshStandardMaterial({ color: 0x1d120a, roughness: 0.5 });
+            for (let yOffset of [-1.1, -0.4, 0.3, 1.0]) {
+                const lineGeo = new THREE.BoxGeometry(doorDepth + 0.02, 0.03, doorWidth * 0.88);
+                const line = new THREE.Mesh(lineGeo, grooveWoodMat);
+                line.position.set(0.02, yOffset, 0);
+                doorGroup.add(line);
+            }
+
+            const metalMat = new THREE.MeshStandardMaterial({
+                color: COLORS.doorMetal,
+                metalness: 0.92,
+                roughness: 0.18
+            });
+
+            const plateGeo = new THREE.BoxGeometry(0.04, 0.45, 0.12);
+            const plate = new THREE.Mesh(plateGeo, metalMat);
+            plate.position.set(0.09, -0.1, 0.6);
+            doorGroup.add(plate);
+
+            const leverGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.28, 16);
+            const lever = new THREE.Mesh(leverGeo, metalMat);
+            lever.rotation.x = Math.PI / 2;
+            lever.position.set(0.12, -0.05, 0.68);
+            doorGroup.add(lever);
+
+            const keyholeGeo = new THREE.BoxGeometry(0.05, 0.05, 0.03);
+            const keyholeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+            const keyhole = new THREE.Mesh(keyholeGeo, keyholeMat);
+            keyhole.position.set(0.1, -0.2, 0.6);
+            doorGroup.add(keyhole);
+
+            const doorSpotLight = new THREE.PointLight(COLORS.ledWarm, 0.9, 5);
+            doorSpotLight.position.set(0.3, (doorHeight / 2) + 0.2, 0);
+            doorGroup.add(doorSpotLight);
+
+            doorGroup.position.set(-3.7, 1.8, -0.5);
+            roomGroup.add(doorGroup);
+        }
+
+        function createPlan30CanvasTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 2048;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Blueprint Architectural Background
+            ctx.fillStyle = '#0e1726';
+            ctx.fillRect(0, 0, 2048, 2048);
+
+            // Fine grid lines
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+            ctx.lineWidth = 2;
+            const gridSize = 64;
+            for (let x = 0; x <= 2048; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 2048);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= 2048; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(2048, y);
+                ctx.stroke();
+            }
+
+            // Major grid lines
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+            ctx.lineWidth = 4;
+            for (let x = 0; x <= 2048; x += gridSize * 4) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 2048);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= 2048; y += gridSize * 4) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(2048, y);
+                ctx.stroke();
+            }
+
+            // Outer Plan Border (Anotaciones de plano)
+            const margin = 160;
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(margin, margin, 2048 - margin * 2, 2048 - margin * 2);
+
+            // Corner ticks for architectural crosshairs
+            const cLen = 40;
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 6;
+
+            // TL, TR, BL, BR crosshairs
+            [[margin, margin], [2048 - margin, margin], [margin, 2048 - margin], [2048 - margin, 2048 - margin]].forEach(([cx, cy]) => {
+                ctx.beginPath();
+                ctx.moveTo(cx - cLen, cy); ctx.lineTo(cx + cLen, cy);
+                ctx.moveTo(cx, cy - cLen); ctx.lineTo(cx, cy + cLen);
+                ctx.stroke();
+            });
+
+            // 2. Giant Architectural "30" Typography
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 820px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Subtle glow / drop shadow on 30
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 30;
+            ctx.fillText('30', 2048 / 2, 2048 / 2 + 20);
+            ctx.shadowBlur = 0; // reset shadow
+
+            // Outline of "30" in architectural stroke
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 10;
+            ctx.strokeText('30', 2048 / 2, 2048 / 2 + 20);
+
+            // 3. Technical Dimension Lines (COTAS PROFESIONALES DE 2.00 METROS)
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 6;
+            ctx.fillStyle = '#f59e0b';
+
+            // --- HORIZONTAL COTA (Top: 2.00 m) ---
+            const topY = margin - 70;
+            const x1 = margin;
+            const x2 = 2048 - margin;
+
+            // Main dimension line
+            ctx.beginPath();
+            ctx.moveTo(x1, topY);
+            ctx.lineTo(x2, topY);
+            ctx.stroke();
+
+            // Extension lines
+            ctx.beginPath();
+            ctx.moveTo(x1, margin); ctx.lineTo(x1, topY - 20);
+            ctx.moveTo(x2, margin); ctx.lineTo(x2, topY - 20);
+            ctx.stroke();
+
+            // Arrowheads (Horizontal)
+            function drawArrow(x, y, angle) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-24, -10);
+                ctx.lineTo(-24, 10);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+            drawArrow(x1, topY, 0);
+            drawArrow(x2, topY, Math.PI);
+
+            // Dimension Text Top
+            ctx.fillStyle = '#fef08a';
+            ctx.font = 'bold 72px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('◄  2.00 m  ►', 2048 / 2, topY - 15);
+
+            // --- VERTICAL COTA (Left: 2.00 m) ---
+            const leftX = margin - 70;
+            const y1 = margin;
+            const y2 = 2048 - margin;
+
+            // Main dimension line
+            ctx.beginPath();
+            ctx.moveTo(leftX, y1);
+            ctx.lineTo(leftX, y2);
+            ctx.stroke();
+
+            // Extension lines
+            ctx.beginPath();
+            ctx.moveTo(margin, y1); ctx.lineTo(leftX - 20, y1);
+            ctx.moveTo(margin, y2); ctx.lineTo(leftX - 20, y2);
+            ctx.stroke();
+
+            // Arrowheads (Vertical)
+            drawArrow(leftX, y1, Math.PI / 2);
+            drawArrow(leftX, y2, -Math.PI / 2);
+
+            // Dimension Text Left (Rotated)
+            ctx.save();
+            ctx.translate(leftX - 25, 2048 / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillStyle = '#fef08a';
+            ctx.font = 'bold 72px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('◄  2.00 m  ►', 0, 0);
+            ctx.restore();
+
+            // 4. Architectural Title Block Stamp (Pie de plano)
+            const tbWidth = 720;
+            const tbHeight = 220;
+            const tbX = 2048 - margin - tbWidth;
+            const tbY = 2048 - margin - tbHeight;
+
+            // Background box for stamp
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(tbX, tbY, tbWidth, tbHeight);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(tbX, tbY, tbWidth, tbHeight);
+
+            // Header line inside stamp
+            ctx.beginPath();
+            ctx.moveTo(tbX, tbY + 65);
+            ctx.lineTo(tbX + tbWidth, tbY + 65);
+            ctx.stroke();
+
+            // Stamp Text
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 36px "Inter", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('DETALLE DE TABLAROCA - MÓDULO 30', tbX + 25, tbY + 18);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '28px "Inter", sans-serif';
+            ctx.fillText('DIMENSIONES: 2.00 m x 2.00 m', tbX + 25, tbY + 85);
+            ctx.fillText('ESCALA: 1:20 | RENDER ARQUITECTÓNICO', tbX + 25, tbY + 125);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillText('AUTOR / DISEÑO: JULIO CESAR', tbX + 25, tbY + 165);
+
+            // Create Canvas Texture
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function buildPlanNumber30() {
+            const planGroup = new THREE.Group();
+
+            // 1. Canvas Texture for 2m x 2m Architectural Plan
+            const planTexture = createPlan30CanvasTexture();
+
+            // Base Panel 2.00m x 2.00m
+            const panelGeo = new THREE.BoxGeometry(0.06, 2.0, 2.0);
+            const planMat = new THREE.MeshStandardMaterial({
+                map: planTexture,
+                roughness: 0.35,
+                metalness: 0.1
+            });
+            const planPanel = new THREE.Mesh(panelGeo, planMat);
+            planPanel.castShadow = true;
+            planPanel.receiveShadow = true;
+            planGroup.add(planPanel);
+
+            // 2. Aluminium Architectural Framing Edge Around the 2x2m Panel
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: 0x22252a,
+                metalness: 0.85,
+                roughness: 0.2
+            });
+
+            // Top / Bottom aluminum rails
+            const hRailGeo = new THREE.BoxGeometry(0.08, 0.05, 2.08);
+            const topRail = new THREE.Mesh(hRailGeo, frameMat);
+            topRail.position.set(0, 1.025, 0);
+            planGroup.add(topRail);
+
+            const bottomRail = new THREE.Mesh(hRailGeo, frameMat);
+            bottomRail.position.set(0, -1.025, 0);
+            planGroup.add(bottomRail);
+
+            // Left / Right aluminum rails
+            const vRailGeo = new THREE.BoxGeometry(0.08, 2.08, 0.05);
+            const leftRail = new THREE.Mesh(vRailGeo, frameMat);
+            leftRail.position.set(0, 0, -1.025);
+            planGroup.add(leftRail);
+
+            const rightRail = new THREE.Mesh(vRailGeo, frameMat);
+            rightRail.position.set(0, 0, 1.025);
+            planGroup.add(rightRail);
+
+            // 3. Extruded Physical 3D "30" Overlay mounted on front of panel for 3D realism
+            const numMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffb703,
+                roughness: 0.2,
+                metalness: 0.3
+            });
+
+            // Physical 3D Digit "3"
+            const shape3 = new THREE.Shape();
+            // Outer contour for '3'
+            shape3.moveTo(0, 0.6);
+            shape3.lineTo(0.4, 0.6);
+            shape3.lineTo(0.4, 0.35);
+            shape3.lineTo(0.15, 0.35);
+            shape3.lineTo(0.15, 0.1);
+            shape3.lineTo(0.4, 0.1);
+            shape3.lineTo(0.4, -0.6);
+            shape3.lineTo(-0.1, -0.6);
+            shape3.lineTo(-0.1, -0.35);
+            shape3.lineTo(0.15, -0.35);
+            shape3.lineTo(0.15, -0.15);
+            shape3.lineTo(-0.1, -0.15);
+            shape3.lineTo(-0.1, 0.15);
+            shape3.lineTo(0.15, 0.15);
+            shape3.lineTo(0.15, 0.35);
+            shape3.lineTo(0, 0.35);
+            shape3.closePath();
+
+            const extrudeSettings = { depth: 0.04, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 3 };
+
+            // 4. Backlight LED Strip behind the 2m x 2m Frame for visual depth
+            const backGlowGeo = new THREE.BoxGeometry(0.02, 2.04, 2.04);
+            const backGlowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
+            const backGlow = new THREE.Mesh(backGlowGeo, backGlowMat);
+            backGlow.position.x = -0.03;
+            planGroup.add(backGlow);
+
+            // Position panel precisely on the Right Wall (2m x 2m dimensions)
+            // Center Y at 2.4m, Z at +1.2m on Right Wall
+            planGroup.position.set(3.68, 2.4, 1.4);
+            roomGroup.add(planGroup);
+        }
+
+        function buildBed() {
+            const bedGroup = new THREE.Group();
+
+            // Bed Base Flotante
+            const baseGeo = new THREE.BoxGeometry(3.2, 0.4, 3.6);
+            const baseMat = new THREE.MeshStandardMaterial({ color: COLORS.bedFrame, roughness: 0.3 });
+            const bedBase = new THREE.Mesh(baseGeo, baseMat);
+            bedBase.position.set(0, 0.4, -1.2);
+            bedBase.castShadow = true;
+            bedBase.receiveShadow = true;
+            bedGroup.add(bedBase);
+
+            // Under-bed Soft Glow Light LED
+            const underBedGlowGeo = new THREE.PlaneGeometry(3.0, 3.4);
+            const underBedGlowMat = new THREE.MeshBasicMaterial({ color: 0xffaa44, side: THREE.DoubleSide });
+            const underBedGlow = new THREE.Mesh(underBedGlowGeo, underBedGlowMat);
+            underBedGlow.rotation.x = Math.PI / 2;
+            underBedGlow.position.set(0, 0.21, -1.2);
+            bedGroup.add(underBedGlow);
+
+            // Colchón Elegante
+            const mattressGeo = new THREE.BoxGeometry(3.0, 0.5, 3.4);
+            const mattressMat = new THREE.MeshStandardMaterial({ color: COLORS.sheets, roughness: 0.8 });
+            const mattress = new THREE.Mesh(mattressGeo, mattressMat);
+            mattress.position.set(0, 0.8, -1.2);
+            mattress.castShadow = true;
+            mattress.receiveShadow = true;
+            bedGroup.add(mattress);
+
+            // Edredón / Duvet
+            const duvetGeo = new THREE.BoxGeometry(3.04, 0.3, 2.6);
+            const duvetMat = new THREE.MeshStandardMaterial({ color: 0xf0f0ed, roughness: 0.9 });
+            const duvet = new THREE.Mesh(duvetGeo, duvetMat);
+            duvet.position.set(0, 0.92, -0.8);
+            duvet.castShadow = true;
+            duvet.receiveShadow = true;
+            bedGroup.add(duvet);
+
+            // Manta Decorativa al pie de cama
+            const blanketGeo = new THREE.BoxGeometry(3.08, 0.08, 1.0);
+            const blanketMat = new THREE.MeshStandardMaterial({ color: COLORS.blanket, roughness: 0.7 });
+            const blanket = new THREE.Mesh(blanketGeo, blanketMat);
+            blanket.position.set(0, 1.02, -0.2);
+            blanket.castShadow = true;
+            bedGroup.add(blanket);
+
+            // Almohadas Principales
+            const pillowGeo = new THREE.BoxGeometry(1.2, 0.2, 0.6);
+            const pillowMat = new THREE.MeshStandardMaterial({ color: COLORS.pillowWhite, roughness: 0.8 });
+            
+            const pillow1 = new THREE.Mesh(pillowGeo, pillowMat);
+            pillow1.position.set(-0.8, 1.12, -2.5);
+            pillow1.rotation.x = 0.2;
+            pillow1.castShadow = true;
+            bedGroup.add(pillow1);
+
+            const pillow2 = new THREE.Mesh(pillowGeo, pillowMat);
+            pillow2.position.set(0.8, 1.12, -2.5);
+            pillow2.rotation.x = 0.2;
+            pillow2.castShadow = true;
+            bedGroup.add(pillow2);
+
+            // Almohadas Decorativas
+            const accentPillowGeo = new THREE.BoxGeometry(0.8, 0.2, 0.45);
+            const accentPillowMat = new THREE.MeshStandardMaterial({ color: COLORS.pillowAccent, roughness: 0.6 });
+
+            const pillow3 = new THREE.Mesh(accentPillowGeo, accentPillowMat);
+            pillow3.position.set(-0.7, 1.15, -2.2);
+            pillow3.rotation.x = 0.25;
+            pillow3.castShadow = true;
+            bedGroup.add(pillow3);
+
+            const pillow4 = new THREE.Mesh(accentPillowGeo, accentPillowMat);
+            pillow4.position.set(0.7, 1.15, -2.2);
+            pillow4.rotation.x = 0.25;
+            pillow4.castShadow = true;
+            bedGroup.add(pillow4);
+
+            roomGroup.add(bedGroup);
+        }
+
+        function buildDrywallCeiling() {
+            const ceilingGroup = new THREE.Group();
+
+            const drywallMat = new THREE.MeshStandardMaterial({
+                color: COLORS.drywallWhite,
+                roughness: 0.4,
+                metalness: 0.02
+            });
+
+            // Base Ceiling Slab
+            const mainCeilingGeo = new THREE.BoxGeometry(8, 0.2, 8);
+            const mainCeiling = new THREE.Mesh(mainCeilingGeo, drywallMat);
+            mainCeiling.position.set(0, 4.8, 0);
+            ceilingGroup.add(mainCeiling);
+
+            // Plafón Flotante de Tablaroca
+            const dropCeilingGeo = new THREE.BoxGeometry(6.6, 0.25, 6.6);
+            const dropCeiling = new THREE.Mesh(dropCeilingGeo, drywallMat);
+            dropCeiling.position.set(0, 4.5, 0);
+            dropCeiling.castShadow = true;
+            dropCeiling.receiveShadow = true;
+            ceilingGroup.add(dropCeiling);
+
+            // Fosa de Luz LED Perimetral Emisiva
+            const coveLedGeo = new THREE.BoxGeometry(6.8, 0.12, 6.8);
+            const coveLedMat = new THREE.MeshBasicMaterial({ color: 0xffba66 });
+            const coveLed = new THREE.Mesh(coveLedGeo, coveLedMat);
+            coveLed.position.set(0, 4.62, 0);
+            ceilingGroup.add(coveLed);
+
+            // Nicho Central Recortado en el Plafón
+            const innerCoveGeo = new THREE.BoxGeometry(3.6, 0.15, 3.6);
+            const innerCoveMat = new THREE.MeshStandardMaterial({ color: 0xdedcd5, roughness: 0.5 });
+            const innerCove = new THREE.Mesh(innerCoveGeo, innerCoveMat);
+            innerCove.position.set(0, 4.55, -0.5);
+            ceilingGroup.add(innerCove);
+
+            // Luminarias Spot Empotradas
+            const spotGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.05, 16);
+            const spotMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 });
+            const glassEmissiveMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+            const spotPositions = [
+                [-2.2, 4.36, -2.2],
+                [2.2, 4.36, -2.2],
+                [-2.2, 4.36, 1.8],
+                [2.2, 4.36, 1.8],
+                [0, 4.36, 2.0]
+            ];
+
+            spotPositions.forEach(pos => {
+                const spotFixture = new THREE.Mesh(spotGeo, spotMat);
+                spotFixture.position.set(pos[0], pos[1], pos[2]);
+                
+                const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 16), glassEmissiveMat);
+                lens.position.set(0, -0.02, 0);
+                spotFixture.add(lens);
+
+                ceilingGroup.add(spotFixture);
+            });
+
+            roomGroup.add(ceilingGroup);
+        }
+
+        function buildDecorAndFurniture() {
+            // Mesas de Noche Flotantes
+            const nightstandGeo = new THREE.BoxGeometry(1.1, 0.25, 0.8);
+            const nightstandMat = new THREE.MeshStandardMaterial({ color: COLORS.woodAccent, roughness: 0.4 });
+
+            const nsLeft = new THREE.Mesh(nightstandGeo, nightstandMat);
+            nsLeft.position.set(-2.4, 0.9, -3.1);
+            nsLeft.castShadow = true;
+            nsLeft.receiveShadow = true;
+            roomGroup.add(nsLeft);
+
+            const nsRight = new THREE.Mesh(nightstandGeo, nightstandMat);
+            nsRight.position.set(2.4, 0.9, -3.1);
+            nsRight.castShadow = true;
+            nsRight.receiveShadow = true;
+            roomGroup.add(nsRight);
+
+            // Lámparas de Mesa Modernas
+            const lampBaseGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.4, 16);
+            const lampShadeGeo = new THREE.CylinderGeometry(0.18, 0.24, 0.35, 16);
+            const lampBaseMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.1 });
+            const lampShadeMat = new THREE.MeshBasicMaterial({ color: 0xffd199 });
+
+            const lampL = new THREE.Mesh(lampBaseGeo, lampBaseMat);
+            lampL.position.set(-2.4, 1.2, -3.1);
+            const shadeL = new THREE.Mesh(lampShadeGeo, lampShadeMat);
+            shadeL.position.set(0, 0.28, 0);
+            lampL.add(shadeL);
+            roomGroup.add(lampL);
+
+            const lampR = new THREE.Mesh(lampBaseGeo, lampBaseMat);
+            lampR.position.set(2.4, 1.2, -3.1);
+            const shadeR = new THREE.Mesh(lampShadeGeo, lampShadeMat);
+            shadeR.position.set(0, 0.28, 0);
+            lampR.add(shadeR);
+            roomGroup.add(lampR);
+
+            // Cuadros Decorativos
+            const artGeo = new THREE.BoxGeometry(0.8, 1.2, 0.04);
+            const artMat = new THREE.MeshStandardMaterial({ color: 0x222225, roughness: 0.2 });
+            const artFrame = new THREE.Mesh(artGeo, artMat);
+            artFrame.position.set(-3.2, 2.7, -3.5);
+            roomGroup.add(artFrame);
+        }
+
+        function setupUIControls() {
+            // Camera Presets
+            const btnGeneral = document.getElementById('cam-general');
+            const btnNumber = document.getElementById('cam-number');
+            const btnBed = document.getElementById('cam-bed');
+            const btnCeiling = document.getElementById('cam-ceiling');
+            const btnMirror = document.getElementById('cam-mirror');
+            const btnDoor = document.getElementById('cam-door');
+            const cameraBtns = [btnGeneral, btnNumber, btnBed, btnCeiling, btnMirror, btnDoor];
+
+            function setActiveCamBtn(activeBtn) {
+                cameraBtns.forEach(btn => btn.classList.remove('active'));
+                activeBtn.classList.add('active');
+            }
+
+            btnGeneral.addEventListener('click', () => {
+                setActiveCamBtn(btnGeneral);
+                animateCamera(new THREE.Vector3(11, 7.5, 11), new THREE.Vector3(0, 2.2, 0));
+            });
+
+            // Target view specifically for the 2.00m x 2.00m Plano "30" on the Right Wall
+            btnNumber.addEventListener('click', () => {
+                setActiveCamBtn(btnNumber);
+                animateCamera(new THREE.Vector3(-0.2, 2.4, 1.4), new THREE.Vector3(3.68, 2.4, 1.4));
+            });
+
+            btnBed.addEventListener('click', () => {
+                setActiveCamBtn(btnBed);
+                animateCamera(new THREE.Vector3(0, 2.8, 4.5), new THREE.Vector3(0, 1.3, -1.2));
+            });
+
+            btnCeiling.addEventListener('click', () => {
+                setActiveCamBtn(btnCeiling);
+                animateCamera(new THREE.Vector3(0, 1.2, 3.8), new THREE.Vector3(0, 4.4, -0.5));
+            });
+
+            btnMirror.addEventListener('click', () => {
+                setActiveCamBtn(btnMirror);
+                animateCamera(new THREE.Vector3(0.5, 2.5, -0.5), new THREE.Vector3(3.68, 2.5, -1.8));
+            });
+
+            btnDoor.addEventListener('click', () => {
+                setActiveCamBtn(btnDoor);
+                animateCamera(new THREE.Vector3(-0.5, 2.2, 2.2), new THREE.Vector3(-3.7, 1.8, -0.5));
+            });
+
+            // Light Mode Switcher
+            const btnLights = document.getElementById('btn-lights');
+            const lightText = document.getElementById('light-mode-text');
+            btnLights.addEventListener('click', () => {
+                if (currentLightMode === 'warm') {
+                    currentLightMode = 'bright';
+                    warmLightsGroup.visible = false;
+                    coolLightsGroup.visible = true;
+                    lightText.innerText = "Luz Blanca/Día";
+                    btnLights.classList.add('active');
+                } else {
+                    currentLightMode = 'warm';
+                    warmLightsGroup.visible = true;
+                    coolLightsGroup.visible = false;
+                    lightText.innerText = "Luz Warm LED";
+                    btnLights.classList.remove('active');
+                }
+            });
+
+            // Auto Rotation Toggle
+            const btnRotate = document.getElementById('btn-rotate');
+            const rotateStatus = document.getElementById('rotate-status');
+            btnRotate.addEventListener('click', () => {
+                isAutoRotating = !isAutoRotating;
+                controls.autoRotate = isAutoRotating;
+                controls.autoRotateSpeed = 1.5;
+                rotateStatus.innerText = `Giro: ${isAutoRotating ? 'ON' : 'OFF'}`;
+                btnRotate.classList.toggle('active', isAutoRotating);
+            });
+
+            // Grid Guide Toggle
+            const btnGrid = document.getElementById('btn-grid');
+            let gridVisible = true;
+            btnGrid.addEventListener('click', () => {
+                gridVisible = !gridVisible;
+                roomGroup.children.forEach(child => {
+                    if (child instanceof THREE.GridHelper) {
+                        child.visible = gridVisible;
+                    }
+                });
+                btnGrid.classList.toggle('active', gridVisible);
+            });
+        }
+
+        function animateCamera(targetPosition, targetLookAt) {
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            const duration = 1000; // ms
+            const startTime = performance.now();
+
+            function updateCam(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Ease Out Cubic
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                camera.position.lerpVectors(startPos, targetPosition, ease);
+                controls.target.lerpVectors(startTarget, targetLookAt, ease);
+                controls.update();
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateCam);
+                }
+            }
+
+            requestAnimationFrame(updateCam);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            initScene();
+            animate();
+        };
+    </script>
+</body>
+</html>
